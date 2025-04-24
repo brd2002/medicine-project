@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "stage" : "tsx && git status && git add ."
+    "stage" : "tsx && git status && git add .",
+    
   },
   "author": "bharat ruidas",
   "license": "ISC",
