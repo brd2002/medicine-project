@@ -13,9 +13,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createUser = createUser;
+exports.getAllUser = getAllUser;
+exports.getUserUsingPhoneNumber = getUserUsingPhoneNumber;
+exports.generateOtpOnPhoneNumber = generateOtpOnPhoneNumber;
 const client_1 = require("../../generated/prisma/client");
 const http_status_codes_1 = require("http-status-codes");
 const zod_1 = __importDefault(require("zod"));
+const otp_generator_1 = __importDefault(require("otp-generator"));
 const prisma = new client_1.PrismaClient();
 function createUser(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -44,7 +48,7 @@ function createUser(req, res) {
                 },
             });
             if (findingUser) {
-                res.status(http_status_codes_1.StatusCodes.NOT_ACCEPTABLE).json({
+                return res.status(http_status_codes_1.StatusCodes.NOT_ACCEPTABLE).json({
                     message: "User already exit"
                 });
             }
@@ -63,13 +67,105 @@ function createUser(req, res) {
                     }
                 });
                 if (newUser) {
-                    res.status(http_status_codes_1.StatusCodes.CREATED).json({
+                    return res.status(http_status_codes_1.StatusCodes.CREATED).json({
                         data: newUser
                     });
                 }
                 else {
-                    res.status(http_status_codes_1.StatusCodes.NOT_IMPLEMENTED).json({
+                    return res.status(http_status_codes_1.StatusCodes.NOT_IMPLEMENTED).json({
                         message: "Something is wrong please try again letter."
+                    });
+                }
+            }
+        }
+        else {
+            return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
+                message: "Please right information"
+            });
+        }
+    });
+}
+function getAllUser(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const allUser = yield prisma.user.findMany();
+        return res.status(http_status_codes_1.StatusCodes.OK).json({ data: allUser });
+    });
+}
+function getUserUsingPhoneNumber(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const phonenumber = req.body.phonenumber;
+        const findUser = yield prisma.user.findUnique({
+            where: {
+                phonenumber: phonenumber
+            }
+        });
+        if (findUser) {
+            return res.status(http_status_codes_1.StatusCodes.OK).json({
+                message: "user is here",
+                data: findUser
+            });
+        }
+        else {
+            return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
+                message: "user Not exist"
+            });
+        }
+    });
+}
+function generateOtpOnPhoneNumber(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const phonenumber = req.body.phonenumber;
+        // const client = await twilio(process.env["TWILIO_ACCOUNT_SID"], process.env["TWILIO_AUTH_TOKEN"]);
+        // console.log(client);
+        const findUser = yield prisma.user.findUnique({
+            where: {
+                phonenumber: phonenumber
+            }
+        });
+        if (findUser) {
+            const otp = otp_generator_1.default.generate(4, { upperCaseAlphabets: false, specialChars: false, lowerCaseAlphabets: false });
+            let phoneNumberExistOnOtpDb = yield prisma.otp.findUnique({
+                where: {
+                    phonenumber: phonenumber
+                }
+            });
+            if (phoneNumberExistOnOtpDb) {
+                const updateOtp = yield prisma.otp.update({
+                    where: {
+                        phonenumber: phonenumber,
+                    },
+                    data: {
+                        otp: otp
+                    }
+                });
+                if (updateOtp) {
+                    return res.status(http_status_codes_1.StatusCodes.OK).json({
+                        message: "Otp updated successfull",
+                        otp: otp
+                    });
+                }
+                else {
+                    return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
+                        message: "Something is wrong please try again letter.",
+                    });
+                }
+            }
+            else {
+                const createPhoneNumberWithOtp = yield prisma.otp.create({
+                    data: {
+                        phonenumber: phonenumber,
+                        otp: otp
+                    }
+                });
+                if (createPhoneNumberWithOtp) {
+                    return res.status(http_status_codes_1.StatusCodes.CREATED).json({
+                        message: "Otp create successfully.",
+                        otp: otp
+                    });
+                }
+                else {
+                    return res.status(http_status_codes_1.StatusCodes.BAD_REQUEST).json({
+                        message: "Something is going wrong"
                     });
                 }
             }

@@ -147,6 +147,13 @@ exports.Prisma.MedicineScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.OtpScalarFieldEnum = {
+  phonenumber: 'phonenumber',
+  otp: 'otp',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -160,7 +167,8 @@ exports.Prisma.QueryMode = {
 
 exports.Prisma.ModelName = {
   User: 'User',
-  medicine: 'medicine'
+  medicine: 'medicine',
+  otp: 'otp'
 };
 
 /**
